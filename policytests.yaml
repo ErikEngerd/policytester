@@ -2,7 +2,7 @@
 pods:
   - name: nginx
     namespace: nginx
-    podname: nginx
+    podnamey: nginx
   - name: httpd-wamblee-org
     namespace: exposure
     podname: httpd-wamblee-org

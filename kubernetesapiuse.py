@@ -2,6 +2,7 @@
 from kubernetes import client, config, stream
 from kubernetes.client.exceptions import ApiException
 
+
 config.load_kube_config()
 
 corev1 = client.CoreV1Api()
@@ -77,13 +78,9 @@ except ApiException as e:
 
 #%% get pod status
 
-from attrdict import AttrDict
 
 res = corev1.list_namespaced_pod("exposure", field_selector=f"metadata.name={pod.metadata.name}")
 res = res.items
 assert len(res) == 1
 res = res[0]
 print(res.status.ephemeral_container_statuses[0].state)
-
-#%%
-res = AttrDict(res.to_dict())

@@ -1,20 +1,26 @@
 ####!/usr/bin/env python3
 
-
+from policytester import SafeLineLoader
+from policytester import PolicyTests
 
 import yaml
-from attrdict import AttrDict
 import sys
-import json
 
-
-filename = "master/networkpolicy/policytests.yaml"
-
-
+filename = "policytests.yaml"
 with open(filename) as f:
-    data = yaml.load(f, Loader=yaml.SafeLoader)
+    data = yaml.load(f, SafeLineLoader)
 
-data = AttrDict(data)
+tests = PolicyTests(data)
+
+
+for error_message in tests.error_messages:
+    print(error_message)
+
+
+
+
+#%%
+sys.exit(1)
 
 addresses = AttrDict()
 address_groups = AttrDict()
