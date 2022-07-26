@@ -1,0 +1,106 @@
+
+pods:
+  - name: nginx
+    namespace: nginx
+    podname: nginx
+  - name: httpd-wamblee-org
+    namespace: exposure
+    podname: httpd-wamblee-org
+  - name: httpd-brakkee-org
+    namespace: exposure
+    podname: httpd-brakkee-org
+  - name: nexus
+    namespace: wamblee-org
+    podname: nexus-0
+  - name: kube-apiserver
+    namespace: kube-system
+    podname: kube-apiserver
+  # pod group
+  - name: all-exposure-pods
+    pods:
+      - httpd-wamblee-org
+      - httpd-brakkee-org
+    
+addresses:
+  - name: internet
+    hosts:
+      - brakkee.org
+      - nu.nl
+      - google.com      
+  - name: dns
+    hosts:
+      - 192.168.178.1
+      - 8.8.8.8
+       
+      
+targets:
+  - name: nginx
+    ports: [80, 443]
+  - name: httpd-wamblee-org
+    ports: [80, 443]
+  - name: nexus
+    ports: [8081, 8082]
+  - name: internet
+    ports: [80, 443]
+  - name: kube-api-server
+    ports: [443]
+  - name: alltargets
+    targets:
+      - httpd-wamblee-org
+      - nexus
+      - internet
+  - name: all-wamblee-services
+    targets:
+      - nexus
+  - name: all-nginx-services
+    targets:
+      - nginx
+  - name: all-system-services
+    targets:
+      - kube-api-server
+      - nginx
+      
+  
+rules:
+  - name: from-nginx
+    from: 
+      - nginx
+    allowed:
+      - httpd-wamblee-org
+      - httpd-brakkee.org
+    denied:
+      - all-system-services
+      - all-wamblee-services
+      - dns
+  - name: from-httpd-wamblee-org
+    from:
+      - httpd-wamblee-org
+    allowed:
+      - dns
+      - nexus
+    denied:
+      - internet
+      - all-system-services
+  - name: from-httpd-brakkee-org
+    from: 
+      - httpd-brakkee-org
+    allowed:
+      - dns
+    denied:
+      - all-wamblee-services
+      - all-system-services
+  - name: from-nexus
+    from:
+      - nexus
+    allowed:
+      - dns
+      - internet
+    denied:
+      - all-wamblee-services
+      - all-system-services
+
+    
+
+
+
+
