@@ -2,7 +2,7 @@
 pods:
   - name: nginx
     namespace: nginx
-    podnamey: nginx
+    podname: nginx
   - name: httpd-wamblee-org
     namespace: exposure
     podname: httpd-wamblee-org
@@ -35,15 +35,30 @@ addresses:
       
 targets:
   - name: nginx
-    ports: [80, 443]
+    ports:
+      - port: 80
+      - port: 443
   - name: httpd-wamblee-org
-    ports: [80, 443]
+    ports:
+      - port: 80
+      - port: 443
   - name: nexus
-    ports: [8081, 8082]
+    ports:
+      - port: 8081
+      - port: 8082
+  - name: dns
+    ports:
+      - port: 53
+        type: TCP
+      - port: 53
+        type: UDP
   - name: internet
-    ports: [80, 443]
+    ports:
+      - port: 80
+      - port: 443
   - name: kube-api-server
-    ports: [443]
+    ports:
+      - port: 443
   - name: alltargets
     targets:
       - httpd-wamblee-org
