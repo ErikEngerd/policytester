@@ -89,15 +89,20 @@ class PolicyTests:
         # pod names must be unique and pod must have either podname of pods element. In case of pods element, the
         # references must refer to pod names defined before.
 
+        self.setup_sources()
+
+    def setup_sources(self):
         self.sources = {}
         for pod in self.config.pods:
             if "podname" in pod:
                 # single pod
                 if "pods" in pod:
-                    self.error_messages.append(f"LINE {pod['__line__']}: Pod '{pod.name}' cannot have 'pods' set because it is a single pod")
+                    self.error_messages.append(
+                        f"LINE {pod['__line__']}: Pod '{pod.name}' cannot have 'pods' set because it is a single pod")
                 else:
                     if pod.name in self.sources:
-                        self.error_messages.append(f"LINE {pod['__line__']}: A pod with name '{pod.name}' already exists")
+                        self.error_messages.append(
+                            f"LINE {pod['__line__']}: A pod with name '{pod.name}' already exists")
                     else:
                         podsource = Pod(pod.name, pod.namespace, pod.podname)
                         self.sources[pod.name] = podsource
@@ -105,7 +110,8 @@ class PolicyTests:
             else:
                 # pod group
                 if "podname" in pod or "namespace" in pod:
-                    self.error_messages.append(f"LINE {pod['__line__']}: Pod '${pod.name}' is a pod group and may not have 'namespace' or 'podname' defined")
+                    self.error_messages.append(
+                        f"LINE {pod['__line__']}: Pod '${pod.name}' is a pod group and may not have 'namespace' or 'podname' defined")
                 if 'pods' not in pod:
                     self.error_messages.append(
                         f"LINE {pod['__line__']}: Pod '${pod.name}' expected pod group but 'pods' element is missing")
@@ -115,7 +121,7 @@ class PolicyTests:
                     if podname not in self.sources:
                         self.error_messages.append(
                             f"LINE {pod['__line__']}: Pod '{pod.name}' pod or pod group with name '{podname}' not found")
-                        errors=True
+                        errors = True
                     else:
                         podlist.update(self.sources[podname].pods())
                 if not errors:
