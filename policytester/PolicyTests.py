@@ -181,13 +181,13 @@ class PolicyTests:
             sources = set()
             for source in rule["from"]:
                 sources.update(self.get_pods(context, source))
-            allowed = Connection(rule.name + ".allowed")
+            allowed = Connections(rule.name + ".allowed")
             for allow in rule.allowed:
                 if allow not in self.connections:
                     self.error_messages.append(f"{context}: connection '{allow}' not found")
                 else:
                     allowed.update(self.connections[allow])
-            denied = Connection(rule.name + ".denied")
+            denied = Connections(rule.name + ".denied")
             for deny in rule.denied:
                 if deny not in self.connections:
                     self.error_messages.append(f"{context}: connection '{deny}' not found")
@@ -217,7 +217,7 @@ class PolicyTests:
 
             context = f"LINE {connection['__line__']}: connection '{connection.name}'"
 
-            connection_obj = Connection(connection.name)
+            connection_obj = Connections(connection.name)
 
             ports = set()
             if "ports" in connection:
@@ -403,7 +403,7 @@ class Port:
         return f"{self.type}:{self.port}"
 
 
-class Connection:
+class Connections:
     def __init__(self, name):
         self.name = name
         # self.connections[podname][port] = Pod object
@@ -433,7 +433,7 @@ class Connection:
                 self.connections[target][port] = connection.connections[target][port]
 
     def __repr__(self):
-        s = f"Connection {self.name}: "
+        s = f"Connections {self.name}: "
         for target in self.connections:
             ports = self.connections[target].keys()
             for port in ports:
