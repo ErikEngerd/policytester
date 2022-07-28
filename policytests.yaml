@@ -50,6 +50,12 @@ connections:
     ports:
       - port: 80
       - port: 443
+  - name: httpd-brakkee-org
+    pods:
+    - httpd-wamblee-org
+    ports:
+      - port: 80
+      - port: 443
   - name: nexus
     pods:
     - nexus
@@ -98,7 +104,7 @@ rules:
       - nginx
     allowed:
       - httpd-wamblee-org
-      - httpd-brakkee.org
+      - httpd-brakkee-org
     denied:
       - all-system-services
       - all-wamblee-services

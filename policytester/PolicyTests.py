@@ -93,6 +93,7 @@ class PolicyTests:
         self.setup_pods()
         self.setup_addresses()
         self.setup_connections()
+        self.setup_rules()
 
     def setup_pods(self):
         self.pods = {}
@@ -160,6 +161,45 @@ class PolicyTests:
                     else:
                         hostlist.update(self.addresses[host].hosts)
                 self.addresses[address.name] = Addresses(address.name, hostlist)
+
+    def setup_rules(self):
+        self.rules = {}
+
+        for rule in self.config.rules:
+            context = f"LINE {rule['__line__']}"
+            if rule.name in self.rules:
+                self.error_messages.append(f"{context}: duplicate rule {rule.name}")
+                continue
+            if "from" not in rule:
+                self.error_messages.append(f"{context}: rule does not have any 'from' pod defined")
+                continue
+            if "allowed" not in rule:
+                rule["allowed"] = []
+            if "denied" not in rule:
+                rule["denied"] = []
+
+            sources = set()
+            for source in rule["from"]:
+                sources.update(self.get_pods(context, source))
+            allowed = Connection(rule.name + ".allowed")
+            for allow in rule.allowed:
+                if allow not in self.connections:
+                    self.error_messages.append(f"{context}: connection '{allow}' not found")
+                else:
+                    allowed.update(self.connections[allow])
+            denied = Connection(rule.name + ".denied")
+            for deny in rule.denied:
+                if deny not in self.connections:
+                    self.error_messages.append(f"{context}: connection '{deny}' not found")
+                else:
+                    denied.update(self.connections[deny])
+            #allowed_and_denied = allowed.intersection(denied)
+            #if allowed_and_denied:
+            #    for ad in allowed_and_denied:
+            #        self.error_messages.append(f"{context} connection '{ad}' is both allowed and denied")
+            self.rules[rule.name] = Rule(rule.name, sources, allowed, denied)
+
+
 
     def setup_connections(self):
         self.connections = {}
@@ -367,7 +407,7 @@ class Connection:
     def __init__(self, name):
         self.name = name
         # self.connections[podname][port] = Pod object
-        # self.connections[addressname][port] = Address object
+        # self.connections[hostname][port] = Address object
         self.connections = {}
 
     def updatePods(self, pods, ports):
@@ -397,5 +437,34 @@ class Connection:
         for target in self.connections:
             ports = self.connections[target].keys()
             for port in ports:
-                s += f"  {target}:{str(port)}"
+                obj = self.connections[target][port]
+                objtype = "pod" if isinstance(obj, Pod) else "address"
+                s += f"  {objtype}:{target}:{str(port)}"
+        return s
+
+    def __eq__(self, other):
+        if isinstance(other, PodReference):
+            return self.name == other.name
+        else:
+            return False
+
+
+    def __hash__(self):
+        return hash(self.name)
+
+
+class Rule:
+    def __init__(self, name, sources, allowed, denied):
+        self.name = name
+        # pod
+        self.sources = sources
+        # connection
+        self.allowed = allowed
+        self.denied = denied
+
+    def __repr__(self):
+        s = f"Rule {self.name}: "
+        s += f"sources {str(self.sources)} "
+        s += f"allowed {str(self.allowed)} "
+        s += f"denied {str(self.denied)}"
         return s

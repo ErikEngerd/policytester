@@ -22,6 +22,8 @@ print("Addresses")
 print(tests.addresses)
 print("Connections")
 print(tests.connections)
+print("Rules")
+print(tests.rules)
 
 
 
