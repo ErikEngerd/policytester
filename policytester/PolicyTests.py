@@ -43,7 +43,7 @@ class PolicyTests:
                     "name": {"type": "string"},
                     "pods": OPTIONAL_LIST_OF_STRINGS,
                     "addresses": OPTIONAL_LIST_OF_STRINGS,
-                    "targets": OPTIONAL_LIST_OF_STRINGS,
+                    "connections": OPTIONAL_LIST_OF_STRINGS,
                     "ports": {
                         "type": "list",
                         "required": False,
@@ -114,10 +114,10 @@ class PolicyTests:
                 # pod group
                 if "podname" in pod or "namespace" in pod:
                     self.error_messages.append(
-                        f"LINE {pod['__line__']}: Pod '${pod.name}' is a pod group and may not have 'namespace' or 'podname' defined")
+                        f"LINE {pod['__line__']}: Pod '{pod.name}' is a pod group and may not have 'namespace' or 'podname' defined")
                 if 'pods' not in pod:
                     self.error_messages.append(
-                        f"LINE {pod['__line__']}: Pod '${pod.name}' expected pod group but 'pods' element is missing")
+                        f"LINE {pod['__line__']}: Pod '{pod.name}' expected pod group but 'pods' element is missing")
                 podlist = set()
                 for podname in pod.pods:
                     podlist.update(self.get_pods(f"LINE {pod['__line__']}: Pod '{pod.name}'", podname))
@@ -127,9 +127,16 @@ class PolicyTests:
     def get_pods(self, context, reference):
         if reference not in self.pods:
             self.error_messages.append(
-                f"LINE {context}: pod or pod group with name '{reference}' not found")
+                f"{context}: pod or pod group with name '{reference}' not found")
             return []
         return self.pods[reference].pods()
+
+    def get_addresses(self, context, reference):
+        if reference not in self.addresses:
+            self.error_messages.append(
+                f"LINE {context}: address with name '{reference}' not found")
+            return []
+        return self.addresses[reference].hosts
 
     def setup_addresses(self):
         self.addresses = {}
@@ -137,7 +144,8 @@ class PolicyTests:
         # address names must be unique
         for address in self.config.addresses:
             if address.name in self.pods:
-                self.error_messages.append(f"LINE {address['__line__']}: duplicate address '{address.name}, there is already a pod definition with that name")
+                self.error_messages.append(
+                    f"LINE {address['__line__']}: duplicate address '{address.name}, there is already a pod definition with that name")
             elif address.name in self.addresses:
                 self.error_messages.append(f"LINE {address['__line__']}: duplicate address '{address.name}'")
             else:
@@ -145,21 +153,55 @@ class PolicyTests:
                     address.hosts = []
                 if "addresses" not in address:
                     address.addresses = []
-                hostlist = address.hosts
+                hostlist = set(address.hosts)
                 for host in address.addresses:
                     if host not in self.addresses:
                         self.error_messages.append(f"LINE {address['__line__']}: address reference '{host}' not found")
                     else:
-                        hostlist += self.addresses[host].hosts
+                        hostlist.update(self.addresses[host].hosts)
                 self.addresses[address.name] = Addresses(address.name, hostlist)
 
     def setup_connections(self):
         self.connections = {}
 
         for connection in self.config.connections:
-            if connection.name in self. connections:
+            if connection.name in self.connections:
                 self.error_messages.append(
-                    f"LINE {address['__line__']}: duplicate address '{address.name}, there is already a pod definition with that name")
+                    f"LINE {connection['__line__']}: duplicate connection '{connection.name}")
+            if "pods" not in connection:
+                connection.pods = []
+            if "addresses" not in connection:
+                connection.addresses = []
+            if "connections" not in connection:
+                connection.connections = []
+
+            context = f"LINE {connection['__line__']}: connection '{connection.name}'"
+
+            connection_obj = Connection(connection.name)
+
+            ports = set()
+            if "ports" in connection:
+                for port in connection.ports:
+                    ports.add(Port(port.port, port.type if "type" in port else "TCP"))
+
+            pods = set()
+            for pod in connection.pods:
+                pods.update(self.get_pods(context, pod))
+
+            connection_obj.updatePods(pods, ports)
+
+            addresses = set()
+            for address in connection.addresses:
+                addresses.update(self.get_addresses(context, address))
+            connection_obj.updateAddresses(addresses, ports)
+
+            for connection_ref in connection.connections:
+                if connection_ref not in self.connections:
+                    self.error_messages.append(f"{context}: unknown connection '{connection_ref}""")
+                else:
+                    connection_obj.update(self.connections[connection_ref])
+
+            self.connections[connection.name] = connection_obj
 
     def remove_field(self, x, field):
         if isinstance(x, dict):
@@ -278,6 +320,7 @@ class PodGroup(PodReference):
         s += "]"
         return s
 
+
 class Addresses:
     def __init__(self, name, hosts):
         self.name = name
@@ -289,15 +332,70 @@ class Addresses:
         s += "]"
         return s
 
+    def __eq__(self, other):
+        if isinstance(other, PodReference):
+            return self.name == other.name
+        else:
+            return False
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def pods(self):
+        raise NotImplementedError()
+
+
 class Port:
     def __init__(self, port, type):
         self.port = port
         self.type = type
 
+    def __eq__(self, other):
+        if isinstance(other, PodReference):
+            return self.port == other.port
+        else:
+            return False
+
+    def __hash__(self):
+        return hash(self.port)
+
+    def __repr__(self):
+        return f"{self.type}:{self.port}"
+
+
 class Connection:
-    def __init__(self, pods, addresses, ports):
-        self.pods = pods
-        self.addresses = addresses
-        self.ports = ports
+    def __init__(self, name):
+        self.name = name
+        # self.connections[podname][port] = Pod object
+        # self.connections[addressname][port] = Address object
+        self.connections = {}
 
+    def updatePods(self, pods, ports):
+        for pod in pods:
+            if pod.name not in self.connections:
+                self.connections[pod.name] = {}
+            for port in ports:
+                self.connections[pod.name][port] = pod
 
+    def updateAddresses(self, addresses, ports):
+        for address in addresses:
+            if address not in self.connections:
+                self.connections[address] = {}
+            for port in ports:
+                self.connections[address][port] = address
+
+    def update(self, connection):
+        for target in connection.connections:
+            ports = connection.connections[target].keys()
+            for port in ports:
+                if target not in self.connections:
+                    self.connections[target] = {}
+                self.connections[target][port] = connection.connections[target][port]
+
+    def __repr__(self):
+        s = f"Connection {self.name}: "
+        for target in self.connections:
+            ports = self.connections[target].keys()
+            for port in ports:
+                s += f"  {target}:{str(port)}"
+        return s

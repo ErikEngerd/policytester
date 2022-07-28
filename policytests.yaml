@@ -70,26 +70,26 @@ connections:
     ports:
       - port: 80
       - port: 443
-  - name: kube-api-server
+  - name: kube-apiserver
     pods:
-      - kube-api-server
+      - kube-apiserver
     ports:
       - port: 443
   - name: alltargets
-    targets:
+    connections:
       - httpd-wamblee-org
       - nexus
       - internet
   - name: all-wamblee-services
-    targets:
+    connections:
       - nexus
   - name: all-nginx-services
-    targets:
-      - nginx
+    connections:
+      - external-http
   - name: all-system-services
-    targets:
-      - kube-api-server
-      - nginx
+    connections:
+      - kube-apiserver
+      - external-http
       
   
 rules:
