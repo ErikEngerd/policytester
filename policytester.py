@@ -16,7 +16,11 @@ tests = PolicyTests(data)
 for error_message in tests.error_messages:
     print(error_message)
 
-tests.sources
+print("Sources:")
+print(tests.pods)
+print("Addresses")
+print(tests.addresses)
+
 
 
 #%%

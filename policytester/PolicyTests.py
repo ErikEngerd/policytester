@@ -30,19 +30,20 @@ class PolicyTests:
                 "type": "dict",
                 "schema": {
                     "name": {"type": "string"},
-                    "hosts": {
-                        "type": "list",
-                        "schema": {"type": "string"}
-                    }
+                    "hosts": OPTIONAL_LIST_OF_STRINGS,
+                    "addresses": OPTIONAL_LIST_OF_STRINGS
                 }
             }
         },
-        "targets": {
+        "connections": {
             "type": "list",
             "schema": {
                 "type": "dict",
                 "schema": {
                     "name": {"type": "string"},
+                    "pods": OPTIONAL_LIST_OF_STRINGS,
+                    "addresses": OPTIONAL_LIST_OF_STRINGS,
+                    "targets": OPTIONAL_LIST_OF_STRINGS,
                     "ports": {
                         "type": "list",
                         "required": False,
@@ -89,10 +90,12 @@ class PolicyTests:
         # pod names must be unique and pod must have either podname of pods element. In case of pods element, the
         # references must refer to pod names defined before.
 
-        self.setup_sources()
+        self.setup_pods()
+        self.setup_addresses()
+        self.setup_connections()
 
-    def setup_sources(self):
-        self.sources = {}
+    def setup_pods(self):
+        self.pods = {}
         for pod in self.config.pods:
             if "podname" in pod:
                 # single pod
@@ -100,12 +103,12 @@ class PolicyTests:
                     self.error_messages.append(
                         f"LINE {pod['__line__']}: Pod '{pod.name}' cannot have 'pods' set because it is a single pod")
                 else:
-                    if pod.name in self.sources:
+                    if pod.name in self.pods:
                         self.error_messages.append(
                             f"LINE {pod['__line__']}: A pod with name '{pod.name}' already exists")
                     else:
                         podsource = Pod(pod.name, pod.namespace, pod.podname)
-                        self.sources[pod.name] = podsource
+                        self.pods[pod.name] = podsource
 
             else:
                 # pod group
@@ -116,17 +119,47 @@ class PolicyTests:
                     self.error_messages.append(
                         f"LINE {pod['__line__']}: Pod '${pod.name}' expected pod group but 'pods' element is missing")
                 podlist = set()
-                errors = False
                 for podname in pod.pods:
-                    if podname not in self.sources:
-                        self.error_messages.append(
-                            f"LINE {pod['__line__']}: Pod '{pod.name}' pod or pod group with name '{podname}' not found")
-                        errors = True
+                    podlist.update(self.get_pods(f"LINE {pod['__line__']}: Pod '{pod.name}'", podname))
+                podgroup = PodGroup(pod.name, podlist)
+                self.pods[pod.name] = podgroup
+
+    def get_pods(self, context, reference):
+        if reference not in self.pods:
+            self.error_messages.append(
+                f"LINE {context}: pod or pod group with name '{reference}' not found")
+            return []
+        return self.pods[reference].pods()
+
+    def setup_addresses(self):
+        self.addresses = {}
+
+        # address names must be unique
+        for address in self.config.addresses:
+            if address.name in self.pods:
+                self.error_messages.append(f"LINE {address['__line__']}: duplicate address '{address.name}, there is already a pod definition with that name")
+            elif address.name in self.addresses:
+                self.error_messages.append(f"LINE {address['__line__']}: duplicate address '{address.name}'")
+            else:
+                if "hosts" not in address:
+                    address.hosts = []
+                if "addresses" not in address:
+                    address.addresses = []
+                hostlist = address.hosts
+                for host in address.addresses:
+                    if host not in self.addresses:
+                        self.error_messages.append(f"LINE {address['__line__']}: address reference '{host}' not found")
                     else:
-                        podlist.update(self.sources[podname].pods())
-                if not errors:
-                    podgroup = PodGroup(pod.name, podlist)
-                    self.sources[pod.name] = podgroup
+                        hostlist += self.addresses[host].hosts
+                self.addresses[address.name] = Addresses(address.name, hostlist)
+
+    def setup_connections(self):
+        self.connections = {}
+
+        for connection in self.config.connections:
+            if connection.name in self. connections:
+                self.error_messages.append(
+                    f"LINE {address['__line__']}: duplicate address '{address.name}, there is already a pod definition with that name")
 
     def remove_field(self, x, field):
         if isinstance(x, dict):
@@ -200,12 +233,12 @@ class PolicyTests:
         return res
 
 
-class Source:
+class PodReference:
     def __init__(self, name):
         self.name = name
 
     def __eq__(self, other):
-        if isinstance(other, Source):
+        if isinstance(other, PodReference):
             return self.name == other.name
         else:
             return False
@@ -217,7 +250,7 @@ class Source:
         raise NotImplementedError()
 
 
-class Pod(Source):
+class Pod(PodReference):
     def __init__(self, name, namespace, podname):
         super().__init__(name)
         self.namespace = namespace
@@ -230,7 +263,7 @@ class Pod(Source):
         return f"pod: {self.name}: {self.namespace}/{self.podname}"
 
 
-class PodGroup(Source):
+class PodGroup(PodReference):
     def __init__(self, name, pods):
         super().__init__(name)
         self.pods = pods
@@ -244,3 +277,27 @@ class PodGroup(Source):
             s += str(pod) + ","
         s += "]"
         return s
+
+class Addresses:
+    def __init__(self, name, hosts):
+        self.name = name
+        self.hosts = hosts
+
+    def __repr__(self):
+        s = f"Address: {self.name}: ["
+        s += ", ".join(self.hosts)
+        s += "]"
+        return s
+
+class Port:
+    def __init__(self, port, type):
+        self.port = port
+        self.type = type
+
+class Connection:
+    def __init__(self, pods, addresses, ports):
+        self.pods = pods
+        self.addresses = addresses
+        self.ports = ports
+
+

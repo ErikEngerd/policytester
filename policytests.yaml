@@ -31,32 +31,48 @@ addresses:
     hosts:
       - 192.168.178.1
       - 8.8.8.8
+  - name: alladdresses
+    addresses:
+      - internet
+      - dns
        
       
-targets:
-  - name: nginx
+connections:
+  - name: external-http
+    pods:
+    - nginx
     ports:
       - port: 80
       - port: 443
   - name: httpd-wamblee-org
+    pods:
+    - httpd-wamblee-org
     ports:
       - port: 80
       - port: 443
   - name: nexus
+    pods:
+    - nexus
     ports:
       - port: 8081
       - port: 8082
   - name: dns
+    addresses:
+    - dns
     ports:
       - port: 53
         type: TCP
       - port: 53
         type: UDP
   - name: internet
+    addresses:
+    - internet
     ports:
       - port: 80
       - port: 443
   - name: kube-api-server
+    pods:
+      - kube-api-server
     ports:
       - port: 443
   - name: alltargets
