@@ -108,7 +108,7 @@ class PolicyTests:
                         self.error_messages.append(
                             f"LINE {pod['__line__']}: A pod with name '{pod.name}' already exists")
                     else:
-                        podsource = Pod(pod.name, pod.namespace, pod.podname)
+                        podsource = SinglePodReference(pod.name, pod.namespace, pod.podname)
                         self.pods[pod.name] = podsource
 
             else:
@@ -332,7 +332,7 @@ class PodReference:
         raise NotImplementedError()
 
 
-class Pod(PodReference):
+class SinglePodReference(PodReference):
     def __init__(self, name, namespace, podname):
         super().__init__(name)
         self.namespace = namespace
@@ -438,7 +438,7 @@ class Connections:
             ports = self.connections[target].keys()
             for port in ports:
                 obj = self.connections[target][port]
-                objtype = "pod" if isinstance(obj, Pod) else "address"
+                objtype = "pod" if isinstance(obj, SinglePodReference) else "address"
                 s += f"  {objtype}:{target}:{str(port)}"
         return s
 
