@@ -2,6 +2,7 @@
 from kubernetes import client, config, stream
 from kubernetes.client.exceptions import ApiException
 from time import time
+import functools
 
 
 class Cluster:
@@ -21,21 +22,58 @@ class Pod:
         self.corev1 = client.CoreV1Api()
         self.podspec = podspec
 
+    def is_valid(self):
+        return self.podspec is not None
+
+    def valid_only(method):
+        @functools.wraps(method)
+        def decorator(self, *args, **kwargs):
+            if not self.is_valid():
+                raise RuntimeError("Attempt to invoke method on deleted pod")
+            return method(self, *args, **kwargs)
+        return decorator
+
+    def refresh_after(method):
+        @functools.wraps(method)
+        def decorator(self, *args, **kwargs):
+            result =  method(self, *args, **kwargs)
+            self.refresh()
+            return result
+        return decorator
+
+    def refresh_before(method):
+        @functools.wraps(method)
+        def decorator(self, *args, **kwargs):
+            self.refresh()
+            result = method(self, *args, **kwargs)
+            return result
+
+        return decorator
+
+    @valid_only
     def name(self):
         return self.podspec.metadata.name
 
+    @valid_only
     def namespace(self):
         return self.podspec.metadata.namespace
 
+    @refresh_before
+    @valid_only
     def phase(self):
         return self.podspec.status.phase
 
+    @refresh_before
+    @valid_only
     def is_running(self):
         return self.phase() == "Running"
 
+    @valid_only
     def labels(self):
         return self.podspec.metadata.labels
 
+    @valid_only
+    @refresh_after
     def label(self, key, value = None):
         metadata = {
             "labels": {
@@ -46,16 +84,20 @@ class Pod:
         self.corev1.patch_namespaced_pod(self.name(), self.namespace(), body)
         self.refresh()
 
+    @valid_only
     def has_ephemeral_container(self, name):
         status = self._get_ephemeral_container_status(name)
         return status is not None
 
+    @refresh_before
+    @valid_only
     def is_ephemeral_container_running(self, name):
         status = self._get_ephemeral_container_status(name)
         if status:
             return status.state.running is not None
         return False
 
+    @valid_only
     def _get_ephemeral_container_status(self, name):
         statuses = self.podspec.status.ephemeral_container_statuses
         if statuses:
@@ -65,6 +107,8 @@ class Pod:
         return None
 
     def refresh(self):
+        if not self.is_valid():
+            return
         pods = self.corev1.list_namespaced_pod(namespace = self.namespace(), field_selector = f"metadata.name={self.name()}")
         if len(pods.items) > 1:
             raise RuntimeError("programming error")
@@ -76,6 +120,7 @@ class Pod:
             else:
                 self.podspec = None
 
+    @refresh_after
     def create_ephemeral_container(self, name, image, command):
         """
         Create ephemeral container.
@@ -104,6 +149,7 @@ class Pod:
         if status != 200:
             raise RuntimeError("Could not create ephemeral container '{name}' in pod {str(self)}")
 
+    @refresh_after
     def exec(self, command, container = None, timeoutSeconds = 1000000, debug=False):
         """
         Executes a command synchronously
@@ -148,6 +194,7 @@ class Pod:
             print(f"Error executing request: {e.reason}")
             raise(e)
 
+    @refresh_after
     def delete(self):
         self.corev1.delete_namespaced_pod(self.name(), self.namespace())
 
