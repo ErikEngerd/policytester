@@ -148,6 +148,9 @@ class Pod:
             print(f"Error executing request: {e.reason}")
             raise(e)
 
+    def delete(self):
+        self.corev1.delete_namespaced_pod(self.name(), self.namespace())
+
     def __repr__(self):
         return f"{self.namespace()}/{self.name()}"
 

@@ -23,6 +23,9 @@ print(res[0])
 # %%
 pods[0].label("abc")
 
+#%%
+pods[0].delete()
+
 # %%
 pods[0].refresh()
 print(pods[0].podspec.metadata.labels)
