@@ -97,7 +97,6 @@ class Pod:
             return status.state.running is not None
         return False
 
-    @valid_only
     def _get_ephemeral_container_status(self, name):
         statuses = self.podspec.status.ephemeral_container_statuses
         if statuses:
