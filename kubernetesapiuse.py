@@ -1,6 +1,6 @@
 from kubernetes import config
 
-from policytester import Cluster
+from policytester import Cluster, ContainerSpec
 
 config.load_kube_config()
 
@@ -9,14 +9,14 @@ pods = cluster.find_pods("exposure")
 
 print(pods[0].podspec.metadata.labels)
 
-pods[0].create_ephemeral_container("debugger", "centos:7", ["sh", "-c", "sleep 1000000"])
+pods[0].create_ephemeral_container(container_spec=ContainerSpec("debugger", "centos:7", ["sh", "-c", "sleep 1000000"]))
 
 print(pods[0].phase())
 print(pods[0].has_ephemeral_container("debugger"))
 print(pods[0].is_ephemeral_container_running("debugger"))
 
 # %%
-res = pods[0].exec(command=["sh", "-c", "ls -l"], container="debugger", timeoutSeconds=100, debug=True)
+res = pods[0].exec(command=["sh", "-c", "ls -l /var; cat /etc/resolv.conf; df"], container="debugger", timeoutSeconds=100, debug=True)
 #print(res[1])
 print(res[0])
 

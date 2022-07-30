@@ -1,28 +1,25 @@
-
-from kubernetes import client, config, stream
-from kubernetes.client.exceptions import ApiException
-from time import time
 import functools
+from time import time
+from typing import List, Dict
+
+from kubernetes import client, stream
+from kubernetes.client import V1Pod
+from kubernetes.client.exceptions import ApiException
 
 
-class Cluster:
-    def __init__(self):
-        self.corev1 = client.CoreV1Api()
-
-    def find_pods(self, namespace = None):
-        if namespace is None:
-            pods = self.corev1.list_pod_for_all_namespaces()
-        else:
-            pods = self.corev1.list_namespaced_pod(namespace)
-        return [Pod(p) for p in pods.items]
+class ContainerSpec:
+    def __init__(self, name: str, image: str, command: List[str]):
+        self.name = name
+        self.image = image
+        self.command = command
 
 
 class Pod:
-    def __init__(self, podspec):
+    def __init__(self, podspec: V1Pod):
         self.corev1 = client.CoreV1Api()
         self.podspec = podspec
 
-    def is_valid(self):
+    def is_valid(self) -> bool:
         return self.podspec is not None
 
     def valid_only(method):
@@ -31,14 +28,16 @@ class Pod:
             if not self.is_valid():
                 raise RuntimeError("Attempt to invoke method on deleted pod")
             return method(self, *args, **kwargs)
+
         return decorator
 
     def refresh_after(method):
         @functools.wraps(method)
         def decorator(self, *args, **kwargs):
-            result =  method(self, *args, **kwargs)
+            result = method(self, *args, **kwargs)
             self.refresh()
             return result
+
         return decorator
 
     def refresh_before(method):
@@ -51,53 +50,53 @@ class Pod:
         return decorator
 
     @valid_only
-    def name(self):
+    def name(self) -> str:
         return self.podspec.metadata.name
 
     @valid_only
-    def namespace(self):
+    def namespace(self) -> str:
         return self.podspec.metadata.namespace
 
     @refresh_before
     @valid_only
-    def phase(self):
+    def phase(self) -> str:
         return self.podspec.status.phase
 
     @refresh_before
     @valid_only
-    def is_running(self):
+    def is_running(self) -> bool:
         return self.phase() == "Running"
 
     @valid_only
-    def labels(self):
+    def labels(self) -> Dict[str, str]:
         return self.podspec.metadata.labels
 
     @valid_only
     @refresh_after
-    def label(self, key, value = None):
+    def label(self, key: str, value: str = None):
         metadata = {
             "labels": {
                 key: value
             }
         }
-        body = client.V1Pod(metadata = metadata)
+        body = client.V1Pod(metadata=metadata)
         self.corev1.patch_namespaced_pod(self.name(), self.namespace(), body)
         self.refresh()
 
     @valid_only
-    def has_ephemeral_container(self, name):
+    def has_ephemeral_container(self, name: str):
         status = self._get_ephemeral_container_status(name)
         return status is not None
 
     @refresh_before
     @valid_only
-    def is_ephemeral_container_running(self, name):
+    def is_ephemeral_container_running(self, name: str):
         status = self._get_ephemeral_container_status(name)
         if status:
             return status.state.running is not None
         return False
 
-    def _get_ephemeral_container_status(self, name):
+    def _get_ephemeral_container_status(self, name: str):
         statuses = self.podspec.status.ephemeral_container_statuses
         if statuses:
             for container in statuses:
@@ -108,7 +107,8 @@ class Pod:
     def refresh(self):
         if not self.is_valid():
             return
-        pods = self.corev1.list_namespaced_pod(namespace = self.namespace(), field_selector = f"metadata.name={self.name()}")
+        pods = self.corev1.list_namespaced_pod(namespace=self.namespace(),
+                                               field_selector=f"metadata.name={self.name()}")
         if len(pods.items) > 1:
             raise RuntimeError("programming error")
         elif len(pods.items) == 0:
@@ -120,7 +120,7 @@ class Pod:
                 self.podspec = None
 
     @refresh_after
-    def create_ephemeral_container(self, name, image, command):
+    def create_ephemeral_container(self, container_spec: ContainerSpec):
         """
         Create ephemeral container.
         :param name:
@@ -129,9 +129,9 @@ class Pod:
         :return:
         """
         body = client.models.V1EphemeralContainer(
-            image=image,
-            name=name,
-            command=command)
+            image=container_spec.image,
+            name=container_spec.name,
+            command=container_spec.command)
         body = {
             "spec": {
                 "ephemeralContainers": [
@@ -149,7 +149,7 @@ class Pod:
             raise RuntimeError("Could not create ephemeral container '{name}' in pod {str(self)}")
 
     @refresh_after
-    def exec(self, command, container = None, timeoutSeconds = 1000000, debug=False):
+    def exec(self, command: List[str], container: str = None, timeoutSeconds: int = 1000000, debug: bool = False):
         """
         Executes a command synchronously
         :param command: command to execute
@@ -158,7 +158,6 @@ class Pod:
         """
 
         output = ""
-
 
         try:
             res = stream.stream(self.corev1.connect_get_namespaced_pod_exec,
@@ -191,7 +190,7 @@ class Pod:
             return res.returncode, output
         except ApiException as e:
             print(f"Error executing request: {e.reason}")
-            raise(e)
+            raise (e)
 
     @refresh_after
     def delete(self):
@@ -200,3 +199,14 @@ class Pod:
     def __repr__(self):
         return f"{self.namespace()}/{self.name()}"
 
+
+class Cluster:
+    def __init__(self):
+        self.corev1 = client.CoreV1Api()
+
+    def find_pods(self, namespace=None) -> List[Pod]:
+        if namespace is None:
+            pods = self.corev1.list_pod_for_all_namespaces()
+        else:
+            pods = self.corev1.list_namespaced_pod(namespace)
+        return [Pod(p) for p in pods.items]
