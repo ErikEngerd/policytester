@@ -7,9 +7,10 @@ config.load_kube_config()
 cluster = Cluster()
 pods = cluster.find_pods("exposure")
 
+#%%
 print(pods[0].podspec.metadata.labels)
 
-pods[0].create_ephemeral_container(container_spec=ContainerSpec("debugger", "centos:7", ["sh", "-c", "sleep 1000000"]))
+#pods[0].create_ephemeral_container(container_spec=ContainerSpec("debugger", "centos:7", ["sh", "-c", "sleep 1000000"]))
 
 print(pods[0].phase())
 print(pods[0].has_ephemeral_container("debugger"))

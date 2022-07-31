@@ -1,10 +1,11 @@
 ####!/usr/bin/env python3
+import time
 
 from policytester import SafeLineLoader
 from policytester import PolicyTests
 
 import yaml
-import sys
+from time import sleep
 
 filename = "policytests.yaml"
 with open(filename) as f:
@@ -25,7 +26,26 @@ print(tests.connections)
 print("Rules")
 print(tests.rules)
 
+from kubernetes import config
+from policytester import *
 
+config.load_kube_config()
+cluster = Cluster()
+debug_container = ContainerSpec("debugger", "instrumentisto/nmap", ["sh", "-c", "tail -f /dev/null"])
+tester = PolicyTester(tests, cluster, debug_container)
+
+#%%
+tester.cleanup()
+
+#%%
+
+pods = tester.prepare()
+tester.wait_until_ready(pods, 60)
+
+
+#%%
+
+tester.test()
 
 #%%
 sys.exit(1)

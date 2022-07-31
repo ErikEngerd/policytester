@@ -1,4 +1,5 @@
 import re
+from typing import List, Set, Dict, Union
 
 import cerberus
 import yaml
@@ -163,7 +164,7 @@ class PolicyTests:
                 self.addresses[address.name] = Addresses(address.name, hostlist)
 
     def setup_rules(self):
-        self.rules = {}
+        self.rules: Dict[str, List[Union[SinglePodReference, Addresses]]] = {}
 
         for rule in self.config.rules:
             context = f"LINE {rule['__line__']}"
@@ -178,7 +179,7 @@ class PolicyTests:
             if "denied" not in rule:
                 rule["denied"] = []
 
-            sources = set()
+            sources: Set[SinglePodReference] = set()
             for source in rule["from"]:
                 sources.update(self.get_pods(context, source))
             allowed = Connections(rule.name + ".allowed")
@@ -316,7 +317,7 @@ class PolicyTests:
 
 
 class PodReference:
-    def __init__(self, name):
+    def __init__(self, name: str):
         self.name = name
 
     def __eq__(self, other):
@@ -338,7 +339,7 @@ class SinglePodReference(PodReference):
         self.namespace = namespace
         self.podname = podname
 
-    def pods(self):
+    def pods(self) -> List:
         return [self]
 
     def __repr__(self):
@@ -350,7 +351,7 @@ class PodGroup(PodReference):
         super().__init__(name)
         self.pods = pods
 
-    def pods(self):
+    def pods(self) -> List[SinglePodReference]:
         return self.pods
 
     def __repr__(self):
@@ -373,7 +374,7 @@ class Addresses:
         return s
 
     def __eq__(self, other):
-        if isinstance(other, PodReference):
+        if isinstance(other, Addresses):
             return self.name == other.name
         else:
             return False
@@ -391,7 +392,7 @@ class Port:
         self.type = type
 
     def __eq__(self, other):
-        if isinstance(other, PodReference):
+        if isinstance(other, Port):
             return self.port == other.port
         else:
             return False
@@ -407,7 +408,7 @@ class Connections:
     def __init__(self, name):
         self.name = name
         # self.connections[podname][port] = Pod object
-        # self.connections[hostname][port] = Address object
+        # self.connections[hostname][port] = str hostname object
         self.connections = {}
 
     def updatePods(self, pods, ports):
@@ -443,7 +444,7 @@ class Connections:
         return s
 
     def __eq__(self, other):
-        if isinstance(other, PodReference):
+        if isinstance(other, Connections):
             return self.name == other.name
         else:
             return False
@@ -454,7 +455,7 @@ class Connections:
 
 
 class Rule:
-    def __init__(self, name, sources, allowed, denied):
+    def __init__(self, name, sources: Set[SinglePodReference], allowed: Connections, denied: Connections):
         self.name = name
         # pod
         self.sources = sources

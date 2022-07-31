@@ -52,7 +52,7 @@ connections:
       - port: 443
   - name: httpd-brakkee-org
     pods:
-    - httpd-wamblee-org
+    - httpd-brakkee-org
     ports:
       - port: 80
       - port: 443
@@ -133,7 +133,6 @@ rules:
       - dns
       - internet
     denied:
-      - all-wamblee-services
       - all-system-services
 
     
