@@ -393,7 +393,7 @@ class Port:
 
     def __eq__(self, other):
         if isinstance(other, Port):
-            return self.port == other.port
+            return self.port == other.port and self.type == other.type
         else:
             return False
 
