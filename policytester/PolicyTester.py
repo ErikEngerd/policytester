@@ -52,7 +52,9 @@ class PolicyTester:
             pods = [p for p in pods if not p.is_ephemeral_container_running(self.debug_container.name)]
             sleep(1)
             count -= 1
-            print(f"Not ready pods: {pods}")
+            print("Not ready pods:")
+            for p in pods:
+                print("  " + str(p))
         return pods
 
     def test(self):
