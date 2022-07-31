@@ -29,10 +29,11 @@ class PolicyTester:
         for rule in rules:
             source_pods.update(rule.sources)
 
+        all_pods = self.cluster.find_pods()
         eligible_pods = []
         for source_pod in source_pods:
             print(f"Used pod ref: {source_pod}")
-            eligible_pod = self.find_eligible_pod(source_pod)
+            eligible_pod = self.find_eligible_pod(source_pod, all_pods)
             print(f"Eligble pods found: {eligible_pod}")
             if not eligible_pod:
                 raise RuntimeError(f"Cannot find eligble pod for {str(source_pod)}")
@@ -55,16 +56,16 @@ class PolicyTester:
         return pods
 
     def test(self):
+        all_pods = self.cluster.find_pods()
         for rule in self.policy_tests.rules.values():
             print(f"RULE {rule.name}")
             source_pods = rule.sources
-            self.test_rule(source_pods, rule.allowed, True)
-            self.test_rule(source_pods, rule.denied, False)
+            self.test_rule(source_pods, rule.allowed, True, all_pods)
+            self.test_rule(source_pods, rule.denied, False, all_pods)
 
-    def test_rule(self, source_pods: List[SinglePodReference], connections: Connections, allowed: bool):
-        all_pods = self.cluster.find_pods()
+    def test_rule(self, source_pods: List[SinglePodReference], connections: Connections, allowed: bool, all_pods: List[Pod]):
         for source_pod in source_pods:
-            pod = self.find_eligible_pod(source_pod)
+            pod = self.find_eligible_pod(source_pod, all_pods)
             for target in connections.connections:
                 for port in connections.connections[target]:
                     address_or_pod = connections.connections[target][port]
@@ -94,9 +95,8 @@ class PolicyTester:
             pod.delete()
 
 
-    def find_eligible_pod(self, source_pod: SinglePodReference, debug=False) -> Pod:
-        pods = self.cluster.find_pods(source_pod.namespace)
-        pods = [p for p in pods if p.name().startswith(source_pod.podname)]
+    def find_eligible_pod(self, source_pod: SinglePodReference, all_pods: List[Pod], debug=False) -> Pod:
+        pods = [p for p in all_pods if p.name().startswith(source_pod.podname)]
 
         # pods with the mentioned debug container
         debug_pods = [p for p in pods if p.has_ephemeral_container(self.debug_container.name)]
