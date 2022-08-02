@@ -36,8 +36,8 @@ config.load_kube_config()
 cluster = Cluster()
 debug_container = DebugContainerSpec(
     "debugger", "appropriate/nc", ["sh", "-c", "tail -f /dev/null"],
-    tcp_check_command="nc -z -i 2 -w 2 {host} {port}",
-    udp_check_command="nc -zu -i 2 -w 2 {host} {port}"
+    tcp_check_command="nc -v -z -i 2 -w 2 {host} {port}",
+    udp_check_command="nc -v -zu -i 2 -w 2 {host} {port}"
 )
 
 tester = PolicyTester(tests, cluster, debug_container)
@@ -58,8 +58,10 @@ print(f"Pods still not ready {str(pods)}")
 tester.test_report.clear()
 tester.test()
 
-#%%
+ #%%
 
 test_report = tester.test_report
+test_report.failed_tests()
 
-
+with open("junit.xml", "w") as f:
+    test_report.write_junit(f)

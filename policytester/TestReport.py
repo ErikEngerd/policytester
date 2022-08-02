@@ -1,5 +1,8 @@
+import sys
 import time
 from attrdict import AttrDict
+import datetime
+import re
 
 class TestReport:
 
@@ -21,6 +24,7 @@ class TestReport:
         self.current_suite.tests = self.ntests
         self.current_suite.failures = self.nfail
         self.current_suite.t0 = time.time()
+        self.current_suite.timestamp = datetime.datetime.now()
         self.current_suite.cases = []
         self.suites.append(self.current_suite)
 
@@ -34,6 +38,8 @@ class TestReport:
     def start_case(self, name):
         print(f"  CASE {name}", end="")
         self.current_case = AttrDict()
+        self.current_case.name = name
+        self.current_case.suite = self.current_suite.name
         self.current_case.t0 = time.time()
         self.current_case.tests = self.ntests
         self.current_case.failures = self.nfail
@@ -56,4 +62,44 @@ class TestReport:
         print(f"TOTAL PASS={self.ntests} FAIL={self.nfail} TIME={self.time}")
 
 
+    def failed_tests(self):
+        res = []
+        for suite in self.suites:
+            if not suite.failures:
+                continue
+            for case in suite.cases:
+                if case.failures:
+                    res.append(case)
+        return res
 
+    def write_junit(self, f):
+        original = sys.stdout
+        sys.stdout = f
+        try:
+            print(f"<testsuites>")
+            id = 0
+            for suite in self.suites:
+                systemout = ""
+                id += 1
+                ts = suite.timestamp.isoformat()
+                ts = re.sub("[.].*$", "", ts)
+                print(f"  <testsuite package='networkpolicy' name='{suite.name}' hostname='pod' id='{id}' tests='{suite.tests}' failures='{suite.failures}' timestamp='{ts}' errors='0' time='{suite.time}'>")
+                print(f"    <properties>")
+                print(f"    </properties>")
+                for case in suite.cases:
+                    print(f"    <testcase name='{case.name}' classname='{suite.id}' time='{case.time}'>")
+                    if not case.ok:
+                        print(f"      <failure message='failed' type='FAIL'>")
+                        print(f"         {self.cdata(case.output)}")
+                        print(f"      </failure>")
+                    systemout += "="*80 + "\n" + f"CASE {suite.name} {case.name}\n\n{case.output}\n\n\n"
+                    print(f"    </testcase>")
+                print(f"    <system-out>{self.cdata(systemout)}</system-out>")
+                print(f"    <system-err></system-err>")
+                print(f"  </testsuite>")
+            print("</testsuites>")
+        finally:
+            sys.stdout = original
+
+    def cdata(self, s):
+        return f"<![CDATA[{s}]]>"
