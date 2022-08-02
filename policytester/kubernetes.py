@@ -13,7 +13,6 @@ class ContainerSpec:
         self.image = image
         self.command = command
 
-
 class Pod:
     def __init__(self, podspec: V1Pod):
         self.corev1 = client.CoreV1Api()
@@ -56,6 +55,9 @@ class Pod:
     @valid_only
     def namespace(self) -> str:
         return self.podspec.metadata.namespace
+
+    def clusterIP(self) -> str:
+        return self.podspec.status.pod_ip
 
     @refresh_before
     @valid_only

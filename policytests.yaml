@@ -49,13 +49,11 @@ connections:
     - httpd-wamblee-org
     ports:
       - port: 80
-      - port: 443
   - name: httpd-brakkee-org
     pods:
     - httpd-brakkee-org
     ports:
       - port: 80
-      - port: 443
   - name: nexus
     pods:
     - nexus
@@ -95,8 +93,7 @@ connections:
   - name: all-system-services
     connections:
       - kube-apiserver
-      - external-http
-      
+
   
 rules:
   - name: from-nginx
@@ -105,10 +102,10 @@ rules:
     allowed:
       - httpd-wamblee-org
       - httpd-brakkee-org
+      - dns # cannot block egress because then initial nginx healthcheck will fail
     denied:
       - all-system-services
       - all-wamblee-services
-      - dns
   - name: from-httpd-wamblee-org
     from:
       - httpd-wamblee-org

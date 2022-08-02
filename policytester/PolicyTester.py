@@ -3,10 +3,11 @@ import setuptools.wheel
 from .PolicyTests import *
 from .kubernetes import *
 from time import sleep
+from .DebugContainerSpec import *
 
 class PolicyTester:
 
-    def __init__(self, policy_tests: PolicyTests, cluster: Cluster, debug_container: ContainerSpec,
+    def __init__(self, policy_tests: PolicyTests, cluster: Cluster, debug_container: DebugContainerSpec,
                  labelkey: str = 'policytester.instrumented',
                  labelvalue:str = "true" ):
         self.policy_tests = policy_tests
@@ -59,28 +60,63 @@ class PolicyTester:
 
     def test(self):
         all_pods = self.cluster.find_pods()
+        nok = 0
+        nfail = 0
         for rule in self.policy_tests.rules.values():
             print(f"RULE {rule.name}")
             source_pods = rule.sources
-            self.test_rule(source_pods, rule.allowed, True, all_pods)
-            self.test_rule(source_pods, rule.denied, False, all_pods)
+            nok1, nfail1 = self.test_rule(source_pods, rule.allowed, True, all_pods)
+            print(f"  allowed pass {nok1} fail {nfail1}")
+
+            nok2, nfail2 = self.test_rule(source_pods, rule.denied, False, all_pods)
+            nok += nok1 + nok2
+            print(f"  allowed pass {nok2} fail {nfail2}")
+
+            nfail += nfail1 + nfail2
+
+        print(f"Summary:  pass {nok} fail {nfail}")
+
 
     def test_rule(self, source_pods: List[SinglePodReference], connections: Connections, allowed: bool, all_pods: List[Pod]):
+
+        nok = 0
+        nfail = 0
         for source_pod in source_pods:
-            pod = self.find_eligible_pod(source_pod, all_pods)
+            pod: Pod = self.find_eligible_pod(source_pod, all_pods)
             for target in connections.connections:
                 for port in connections.connections[target]:
                     address_or_pod = connections.connections[target][port]
                     if isinstance(address_or_pod, SinglePodReference):
                         running_pod = self.find_pod_reference(address_or_pod, all_pods)
                         if running_pod:
-                            pod_ip = running_pod.podspec.status.pod_ip
-                            print(f"  {str(pod):<50} {pod_ip:<20} {str(port):<10} {str(allowed):<10} {running_pod.namespace()}/{running_pod.name()}")
+                            target_address = running_pod.clusterIP()
+                            print(f"  {str(pod):<50} {target_address:<20} {str(port):<10} {str(allowed):<10} {running_pod.namespace()}/{running_pod.name()}  ", end="")
                         else:
                             raise RuntimeError(f"Cannot find target pod for {str(address_or_pod)}")
                     else:
-                        print(f"  {str(pod):<50} {address_or_pod:<20} {str(port):<10} {str(allowed):<10}")
+                        print(f"  {str(pod):<50} {address_or_pod:<20} {str(port):<10} {str(allowed):<10}  ", end="")
+                        target_address = address_or_pod
 
+                    actual_result, output = PolicyTester.is_connection_allowed(
+                        self.debug_container,
+                        pod,
+                        target_address,
+                        port
+                    )
+                    if actual_result == allowed:
+                        print("PASS")
+                        nok += 1
+                    else:
+                        print("FAIL")
+                        nfail += 1
+
+        return nok, nfail
+
+    def is_connection_allowed(debug_container: DebugContainerSpec, source: Pod, target_address: str, port: Port):
+        cmd = debug_container.get_command(target_address, port)
+        exit_status, output = source.exec(cmd, debug_container.name)
+        actual_result = False if exit_status else True
+        return actual_result, output
 
     def find_pod_reference(self, pod: SinglePodReference, all_pods) -> Union[Pod, None]:
         pods = [p for p in all_pods if p.namespace() == pod.namespace and p.name().startswith(pod.podname)]
