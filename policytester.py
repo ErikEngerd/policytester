@@ -32,7 +32,7 @@ from policytester import *
 config.load_kube_config()
 cluster = Cluster()
 debug_container = DebugContainerSpec(
-    "debugger", "instrumentisto/nmap", ["sh", "-c", "tail -f /dev/null"],
+    "debugger", "appropriate/nc", ["sh", "-c", "tail -f /dev/null"],
     tcp_check_command="nc -z -i 2 -w 2 {host} {port}",
     udp_check_command="nc -zu -i 2 -w 2 {host} {port}"
 )
@@ -45,7 +45,8 @@ tester.cleanup()
 #%%
 
 pods = tester.prepare()
-tester.wait_until_ready(pods, 60)
+pods = tester.wait_until_ready(pods, 60)
+print(f"Pods still not ready {str(pods)}")
 
 
 #%%
