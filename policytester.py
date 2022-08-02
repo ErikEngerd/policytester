@@ -55,6 +55,11 @@ print(f"Pods still not ready {str(pods)}")
 
 #%%
 
+tester.test_report.clear()
 tester.test()
+
+#%%
+
+test_report = tester.test_report
 
 
