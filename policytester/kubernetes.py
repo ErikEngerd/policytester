@@ -18,13 +18,11 @@ class Pod:
         self.corev1 = client.CoreV1Api()
         self.podspec = podspec
 
-    def is_valid(self) -> bool:
-        return self.podspec is not None
 
-    def valid_only(method):
+    def alive_only(method):
         @functools.wraps(method)
         def decorator(self, *args, **kwargs):
-            if not self.is_valid():
+            if self.podspec is None:
                 raise RuntimeError("Attempt to invoke method on deleted pod")
             return method(self, *args, **kwargs)
 
@@ -48,11 +46,15 @@ class Pod:
 
         return decorator
 
-    @valid_only
+    @refresh_before
+    def is_alive(self) -> bool:
+        return self.podspec is not None
+
+    @alive_only
     def name(self) -> str:
         return self.podspec.metadata.name
 
-    @valid_only
+    @alive_only
     def namespace(self) -> str:
         return self.podspec.metadata.namespace
 
@@ -60,20 +62,20 @@ class Pod:
         return self.podspec.status.pod_ip
 
     @refresh_before
-    @valid_only
+    @alive_only
     def phase(self) -> str:
         return self.podspec.status.phase
 
     @refresh_before
-    @valid_only
+    @alive_only
     def is_running(self) -> bool:
         return self.phase() == "Running"
 
-    @valid_only
+    @alive_only
     def labels(self) -> Dict[str, str]:
         return self.podspec.metadata.labels
 
-    @valid_only
+    @alive_only
     @refresh_after
     def label(self, key: str, value: str = None):
         metadata = {
@@ -85,13 +87,13 @@ class Pod:
         self.corev1.patch_namespaced_pod(self.name(), self.namespace(), body)
         self.refresh()
 
-    @valid_only
+    @alive_only
     def has_ephemeral_container(self, name: str):
         status = self._get_ephemeral_container_status(name)
         return status is not None
 
     @refresh_before
-    @valid_only
+    @alive_only
     def is_ephemeral_container_running(self, name: str):
         status = self._get_ephemeral_container_status(name)
         if status:
@@ -107,7 +109,7 @@ class Pod:
         return None
 
     def refresh(self):
-        if not self.is_valid():
+        if self.podspec is None:
             return
         pods = self.corev1.list_namespaced_pod(namespace=self.namespace(),
                                                field_selector=f"metadata.name={self.name()}")
@@ -119,6 +121,9 @@ class Pod:
             if self.podspec.metadata.uid == pods.items[0].metadata.uid:
                 self.podspec = pods.items[0]
             else:
+                # need to distinguish a Pod and a restarted one to deal with restarts of
+                # pods (e.g. stateful sets where the newly created pods can have the same names
+                # as the deleted ones). oO
                 self.podspec = None
 
     @refresh_after

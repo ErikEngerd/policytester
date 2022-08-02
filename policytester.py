@@ -43,12 +43,13 @@ debug_container = DebugContainerSpec(
 tester = PolicyTester(tests, cluster, debug_container)
 
 #%%
-tester.cleanup()
+pods = tester.cleanup()
+tester.wait_until_pods_deleted(pods, 60)
 
 #%%
 
 pods = tester.prepare()
-pods = tester.wait_until_ready(pods, 60)
+pods = tester.wait_until_debug_container_ready(pods, 60)
 print(f"Pods still not ready {str(pods)}")
 
 

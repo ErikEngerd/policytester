@@ -47,13 +47,19 @@ class PolicyTester:
 
         return eligible_pods
 
-    def wait_until_ready(self, pods: List[Pod], timeoutSeconds: int):
+    def wait_until_pods_deleted(self, pods: List[Pod], timeoutSeconds: int):
+        return self._wait_until_condition(pods, timeoutSeconds, lambda p: not p.is_alive())
+
+    def wait_until_debug_container_ready(self, pods: List[Pod], timeoutSeconds: int):
+        return self._wait_until_condition(pods, timeoutSeconds, lambda p: p.is_ephemeral_container_running(self.debug_container.name))
+
+    def _wait_until_condition(self, pods: List[Pod], timeoutSeconds: int, condition):
         count = timeoutSeconds
         while count > 0 and pods:
-            pods = [p for p in pods if not p.is_ephemeral_container_running(self.debug_container.name)]
+            pods = [p for p in pods if not condition(p)]
             sleep(1)
             count -= 1
-            print("Not ready pods:")
+            print("Pending pods:")
             for p in pods:
                 print("  " + str(p))
         return pods
@@ -78,7 +84,6 @@ class PolicyTester:
 
 
     def test_rule(self, source_pods: List[SinglePodReference], connections: Connections, allowed: bool, all_pods: List[Pod]):
-
         nok = 0
         nfail = 0
         for source_pod in source_pods:
@@ -131,6 +136,7 @@ class PolicyTester:
         for pod in pods:
             print(f"Deleting pod {pod.namespace()}/{pod.name()}")
             pod.delete()
+        return pods
 
 
     def find_eligible_pod(self, source_pod: SinglePodReference, all_pods: List[Pod], debug=False) -> Pod:
