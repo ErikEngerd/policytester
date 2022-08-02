@@ -76,7 +76,10 @@ class PolicyTests:
     }
 
     def __init__(self, config):
-        self.config = AttrDict(config)
+        self.config = AttrDict(config.copy())
+        for field in ["pods", "addresses", "connections", "rules"]:
+            if field not in self.config:
+                self.config[field] = []
 
         v = cerberus.Validator(PolicyTests.SCHEMA, require_all=True)
 

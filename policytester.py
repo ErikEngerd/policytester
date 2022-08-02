@@ -12,6 +12,9 @@ with open(filename) as f:
     data = yaml.load(f, SafeLineLoader)
 
 tests = PolicyTests(data)
+# test without config and use lower level API.
+#tests = PolicyTests({})
+
 
 
 for error_message in tests.error_messages:
