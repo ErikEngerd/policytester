@@ -73,7 +73,8 @@ class Pod:
 
     @alive_only
     def labels(self) -> Dict[str, str]:
-        return self.podspec.metadata.labels
+        vals = self.podspec.metadata.labels
+        return vals if vals else {}
 
     @alive_only
     @refresh_after
