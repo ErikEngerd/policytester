@@ -72,7 +72,7 @@ connections:
     addresses:
     - internet
     ports:
-      - port: 81
+      - port: 80
       - port: 443
   - name: kube-apiserver
     pods:
@@ -102,10 +102,10 @@ rules:
     allowed:
       - httpd-wamblee-org
       - httpd-brakkee-org
-      - dns # cannot block egress because then initial nginx healthcheck will fail
     denied:
       - all-system-services
       - all-wamblee-services
+      - dns
   - name: from-httpd-wamblee-org
     from:
       - httpd-wamblee-org
