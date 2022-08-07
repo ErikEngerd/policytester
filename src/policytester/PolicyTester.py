@@ -63,8 +63,8 @@ class PolicyTester:
             sleep(1)
             count -= 1
             if len(pods) == nremaining:
-
                 print(".", end="")
+                sys.stdout.flush()
             else:
                 nremaining = len(pods)
                 if nremaining > 0:
