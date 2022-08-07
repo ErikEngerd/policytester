@@ -58,10 +58,10 @@ print(f"Pods still not ready {str(pods)}")
 tester.test_report.clear()
 tester.test()
 
- #%%
+  #%%
 
 test_report = tester.test_report
-test_report.failed_tests()
+failed = test_report.failed_tests()
 
 with open("junit.xml", "w") as f:
     test_report.write_junit(f)
