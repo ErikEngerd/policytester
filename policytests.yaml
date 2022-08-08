@@ -12,9 +12,6 @@ pods:
   - name: nexus
     namespace: wamblee-org
     podname: nexus-0
-  - name: kube-apiserver
-    namespace: kube-system
-    podname: kube-apiserver
   # pod group
   - name: all-exposure-pods
     pods:
@@ -31,6 +28,9 @@ addresses:
     hosts:
       - 192.168.178.1
       - 8.8.8.8
+  - name: kube-apiserver
+    hosts:
+      - 192.168.178.89
   - name: alladdresses
     addresses:
       - internet
@@ -66,8 +66,9 @@ connections:
     ports:
       - port: 53
         type: TCP
-      - port: 53
-        type: UDP
+      # UDP generic checks are not possible
+      #- port: 53
+      #  type: UDP
   - name: internet
     addresses:
     - internet
@@ -75,10 +76,10 @@ connections:
       - port: 80
       - port: 443
   - name: kube-apiserver
-    pods:
+    addresses:
       - kube-apiserver
     ports:
-      - port: 443
+      - port: 6443
   - name: alltargets
     connections:
       - httpd-wamblee-org
@@ -102,8 +103,8 @@ rules:
     allowed:
       - httpd-wamblee-org
       - httpd-brakkee-org
+      - kube-apiserver
     denied:
-      - all-system-services
       - all-wamblee-services
       - dns
   - name: from-httpd-wamblee-org
