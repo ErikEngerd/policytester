@@ -2,7 +2,7 @@ import sys
 from os import access, R_OK
 from os.path import isfile
 from attrdict import AttrDict # add def
-import yaml  # add dep
+import yaml
 import kubernetes
 from .kubernetes import *
 from .PolicyTests import *
