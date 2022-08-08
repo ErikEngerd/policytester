@@ -17,7 +17,7 @@ kubernetes 1.24 which allows to add new containers to existing pods. The main pu
 this is for debugging (testing), so these containers are sometimes also called debug
 containers. 
 
-This approach allows us to test network communication 
+This approach allows to test network communication 
 within the cluster and also from within the cluster to the internet. The advantage of 
 using ephemeral containers is that it uses existing pods, so the testing environment is 
 identical to the actual environmnet, since no separate test pods are created. Therefore,
