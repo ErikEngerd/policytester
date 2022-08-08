@@ -39,11 +39,15 @@ For this to work, the policy tester can work in three modes:
     sys.exit(1)
 
 def prepare(tester: PolicyTester):
-    pods = tester.prepare()
-    pods = tester.wait_until_debug_container_ready(pods, 60)
+    podstoinstrument = tester.prepare()
+    pods = tester.wait_until_debug_container_ready(podstoinstrument, 60)
     if pods:
         print(f"Pods still not ready {str(pods)}")
         sys.exit(1)
+    else:
+        print("\nAll pods are instrumneted:")
+        for pod in podstoinstrument:
+            print(f"  {str(pod)}")
 
 def execute(tester: PolicyTester):
     tester.test()
@@ -66,6 +70,8 @@ def cleanup(tester: PolicyTester):
     if pods:
         print(f"Pods still not deleted {str(pods)}")
         sys.exit(1)
+    else:
+        print("\nAll instrumented pods were deleted")
 
 
 modes = {

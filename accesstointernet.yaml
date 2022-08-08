@@ -1,0 +1,42 @@
+
+pods:
+  - name: httpd-wamblee-org # some comment 
+    namespace: exposure
+    podname: httpd-wamblee-org
+    
+addresses:
+  - name: internet
+    hosts:
+      - github.com
+      - google.com
+  - name: maven-repo
+    hosts:
+      - repo1.maven.org
+connections:
+  - name: internet
+    addresses:
+      - internet
+    ports:
+      - port: 80
+      - port: 443
+  - name: maven-repo
+    addresses:
+      - maven-repo
+    ports:
+      - port: 80
+      - port: 443
+
+rules:
+  - name: internet-access
+    from: 
+      - httpd-wamblee-org
+    allowed:
+      - maven-repo
+    denied:
+      - internet
+
+
+
+
+
+
