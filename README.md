@@ -5,7 +5,7 @@
 Network security is often overlooked in Kubernetes. However, without any network policies 
 in place kubernetes deployments are basically identical to a traditional infrastructure 
 where tehre is no network segmentation at all. Luckily network policies in Kubernetes
-can provide the required network segmentation, see my introudciton post 
+can provide the required network segmentation, see
 [the introduction post](https://brakkee.org/site/index.php/2022/07/23/securing-network-communication-on-kubernetes-using-network-policies/).
 
 However, network policies must be verified since it is easy to make a mistake. That is 
