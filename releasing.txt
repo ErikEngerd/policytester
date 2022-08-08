@@ -1,0 +1,24 @@
+
+# install deps
+
+pip install pip-tools bumpver build twine 
+
+# editable install
+pip install -e . 
+
+# build packages
+python -m build 
+
+# bumpver 
+bumpver update -n --major --dry 
+bumpver update -n --minor --dry
+bumpver update -n --patch --dry
+
+# upload to testpy
+twine upload --verbose -r testpypi dist/*
+# install from testpy 
+python3 -m pip install --index-url https://test.pypi.org/simple/ policytester
+
+
+# upload to pypi
+twine upload --verbose dist/*
