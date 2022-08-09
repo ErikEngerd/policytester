@@ -53,8 +53,7 @@ cluster.
 
 ## Example
 
-### Verify that a pod can reach the java maven repository at 
-`repo1.maven.org` but (most likely) not any other ones. 
+### Verify that a pod can reach the java maven repository but (most likely) not any other ones. 
 
 ```angular2html
 
@@ -95,6 +94,8 @@ rules:
     denied:
       - internet
 ```
+
+A more complete example is [here](policytests.yaml).
 
 ## Structure of the input file 
 
