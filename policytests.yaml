@@ -38,12 +38,6 @@ addresses:
        
       
 connections:
-  - name: external-http
-    pods:
-    - nginx
-    ports:
-      - port: 80
-      - port: 443
   - name: httpd-wamblee-org
     pods:
     - httpd-wamblee-org
@@ -88,9 +82,6 @@ connections:
   - name: all-wamblee-services
     connections:
       - nexus
-  - name: all-nginx-services
-    connections:
-      - external-http
   - name: all-system-services
     connections:
       - kube-apiserver
