@@ -32,6 +32,8 @@ dev = ["black", "bumpver", "isort", "pip-tools", "pytest"]
 
 [project.urls]
 Homepage = "https://github.com/ErikEngerd/policytester"
+source = "https://github.com/ErikEngerd/policytester.git"
+documentation = "https://github.com/ErikEngerd/policytester#readme"
 
 [project.scripts]
 policytester = "policytester.__main__:main"
