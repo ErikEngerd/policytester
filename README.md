@@ -53,9 +53,6 @@ cluster.
 
 ## Example
 
-
-### Verify that a httpd pod can reach the nexus pod 
-
 ### Verify that a pod can reach the java maven repository but (most likely) not any other hosts 
 
 ```angular2html
