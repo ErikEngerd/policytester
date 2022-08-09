@@ -9,10 +9,13 @@ pip install -e .
 # build packages
 python -m build 
 
+# update requirements.txt
+pip-compile pyproject.toml
+
 # bumpver 
-bumpver update -n --major --dry 
-bumpver update -n --minor --dry
-bumpver update -n --patch --dry
+bumpver update -n --major # --dry 
+bumpver update -n --minor # --dry
+bumpver update -n --patch # --dry
 
 # upload to testpy
 twine upload --verbose -r testpypi dist/*
