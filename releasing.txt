@@ -15,6 +15,7 @@ bumpver update -n --patch # --dry
 pip-compile pyproject.toml
 
 # build packages
+rm -rf dist 
 python -m build 
 
 # upload to testpy
