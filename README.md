@@ -53,7 +53,7 @@ cluster.
 
 ## Example
 
-### Verify that a pod can reach the java maven repository but (most likely) not any other ones. 
+### Verify that a pod can reach the java maven repository but (most likely) not any other hosts 
 
 ```angular2html
 
