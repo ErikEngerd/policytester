@@ -255,6 +255,7 @@ using the label that was added.
   network access from deployments and replicasets with replica count 1. 
 * tested with kubernetes 1.23. It will not work with earlier versions because of a change 
   in the rest API. I also did not verify it with kubernetes 1.24. 
+* you need a network provider with network policy support. 
 
 
 
