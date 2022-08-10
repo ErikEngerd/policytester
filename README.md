@@ -101,12 +101,10 @@ rules:
       - internet
 ```
 
-A more complete example is [here](policytests.yaml).
-
 ### Verify that a wordpress container can access mysql, but that mysql cannot be accessed by nexus
 
 The example below defines two source pods: nexus and wordpress and one target pod mysql. 
-Next it defines an address to connect to on the mysql pod. Then a rule specifies that 
+Next it defines a connection to on the mysql pod on port 3306. Then a rule specifies that 
 wordpress can access mysql but nexus cannot. 
 
 ```angular2html
