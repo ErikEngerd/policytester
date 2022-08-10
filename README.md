@@ -53,6 +53,7 @@ cluster.
 
 ## Example
 
+
 ### Verify that Nexus can reach the java maven repository and nothing else
 
 Background: Nexus is a repository manager that supports Java as one of the repository formats.
@@ -64,7 +65,7 @@ must be allowed and as a sample, two hosts are checked to which access should be
 
 pods:
   - name: nexus
-    namespace: devenv
+    namespace: web
     podname: nexus
     
 addresses:
@@ -101,6 +102,45 @@ rules:
 ```
 
 A more complete example is [here](policytests.yaml).
+
+### Verify that a wordpress container can access mysql, but that mysql cannot be accessed by nexus
+
+The example below defines two source pods: nexus and wordpress and one target pod mysql. 
+Next it defines an address to connect to on the mysql pod. Then a rule specifies that 
+wordpress can access mysql but nexus cannot. 
+
+```angular2html
+pods:
+  - name: nexus
+    namespace: web
+    podname: nexus
+  - name: wordpress
+    namespace: web
+    podname: wordpress
+  - name: mysql
+    namespace: web
+    podname: mysql
+
+connections:
+  - name: mysql
+    pods:
+      - mysql
+    ports:
+      - port: 3306
+
+rules:
+  - name: nexus-mysql-denied
+    from: 
+      - nexus
+    denied:
+      - mysql 
+      
+  - name: wordpress-mysql-allowed
+    from: 
+      - wordpress
+    allowed: 
+      - mysql 
+```
 
 ## Structure of the input file 
 

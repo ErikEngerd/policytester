@@ -1,0 +1,38 @@
+
+pods:
+  - name: nexus
+    namespace: web
+    podname: nexus
+  - name: wordpress
+    namespace: web
+    podname: wordpress
+  - name: mysql
+    namespace: web
+    podname: mysql
+
+connections:
+  - name: mysql
+    pods:
+      - mysql
+    ports:
+      - port: 3306
+
+rules:
+  - name: nexus-mysql-denied
+    from: 
+      - nexus
+    denied:
+      - mysql 
+      
+  - name: wordpress-mysql-allowed
+    from: 
+      - wordpress
+    allowed: 
+      - mysql 
+      
+
+
+
+
+
+
