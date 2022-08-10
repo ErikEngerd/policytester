@@ -182,7 +182,7 @@ in the addresses field, and ports:
 
 Finally, the rules section describes from which source pods, the
 connections are allowed or denied. In the example above, we specify that the 
-`httpd-wamblee-org` pod can connect to the maven repo at ports 80 and 443, but that 
+`nexus` pod can connect to the maven repo at ports 80 and 443, but that 
 it cannot connect to github.com and google.com: 
 * *name*: the name of the rule
 * *from*: pod references. Because of pod groups (see later) 
@@ -199,17 +199,17 @@ any other pod or address using its `name`.
 
 ```angular2html
 pods:
-  - name: httpd-wamblee-org
-    namespace: exposure
-    podname: httpd-wamblee-org
-  - name: httpd-brakkee-org
-    namespace: exposure
-    podname: httpd-brakkee-org
+  - name: nexus
+    namespace: web
+    podname: nexus
+  - name: wordpress
+    namespace: web
+    podname: wordpress
   # pod group
-  - name: all-exposure-pods
+  - name: all-web
     pods:
-      - httpd-wamblee-org # refers to earlier pod name
-      - httpd-brakkee-org # same...
+      - nexus # refers to earlier pod name
+      - wordpress # same...
 ```
 
 ### Address groups
