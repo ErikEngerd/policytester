@@ -173,7 +173,8 @@ The next section defines the connections that can be tested as a combination of 
 in the addresses field, and ports:
 * *name*: a symbolic name of the connection by which it can be referenced in the 
   rules section of by other connection objects. 
-* *addresses*: A list of names of pods or addresses
+* *addresses*: A list of names of addresses
+* *pods*: A list of names of pods
 * *ports*: A list of ports that must be tested. Each port is defined by its `port` which 
   defines the numeric port and by an optional `type` (UDP or TCP) which by default is 
   TCP. 
