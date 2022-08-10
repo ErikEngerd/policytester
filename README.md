@@ -104,8 +104,8 @@ rules:
 ### Verify that a wordpress container can access mysql, but that mysql cannot be accessed by nexus
 
 The example below defines two source pods: nexus and wordpress and one target pod mysql. 
-Next it defines a connection to on the mysql pod on port 3306. Then a rule specifies that 
-wordpress can access mysql but nexus cannot. 
+Next it defines a connection to the mysql pod on port 3306. Then a rule specifies that 
+wordpress can open the mysql connection but nexus cannot. 
 
 ```angular2html
 pods:
