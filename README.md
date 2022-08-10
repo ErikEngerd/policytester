@@ -53,14 +53,19 @@ cluster.
 
 ## Example
 
-### Verify that a pod can reach the java maven repository but (most likely) not any other hosts 
+### Verify that Nexus can reach the java maven repository and nothing else
+
+Background: Nexus is a repository manager that supports Java as one of the repository formats.
+For caching/proxying functionality, nexus needs to be able to access the central maven repo
+but not any other things on the internet. In the test below, access to the maven repo
+must be allowed and as a sample, two hosts are checked to which access should be denied. 
 
 ```angular2html
 
 pods:
-  - name: httpd-wamblee-org
-    namespace: exposure
-    podname: httpd-wamblee-org
+  - name: nexus
+    namespace: devenv
+    podname: nexus
     
 addresses:
   - name: internet
@@ -88,7 +93,7 @@ connections:
 rules:
   - name: internet-access
     from: 
-      - httpd-wamblee-org
+      - nexus
     allowed:
       - maven-repo
     denied:

@@ -1,8 +1,8 @@
 
 pods:
-  - name: httpd-wamblee-org # some comment 
-    namespace: exposure
-    podname: httpd-wamblee-org
+  - name: nexus
+    namespace: devenv
+    podname: nexus
     
 addresses:
   - name: internet
@@ -12,6 +12,7 @@ addresses:
   - name: maven-repo
     hosts:
       - repo1.maven.org
+
 connections:
   - name: internet
     addresses:
@@ -29,7 +30,7 @@ connections:
 rules:
   - name: internet-access
     from: 
-      - httpd-wamblee-org
+      - nexus
     allowed:
       - maven-repo
     denied:
