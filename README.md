@@ -292,7 +292,7 @@ using the label that was added.
 
 * incoming network connections cannot be tested by this tool
 * UDP tests are, for obvious reasons, not really possible in a generic way. Even though
-  policytester supports it, these tests are unreliabnle
+  policytester supports it, these tests are unreliable
 * the cleanup phase simply deletes instrumented pods. Your setup must be able to handle
   this. Use this tool on a staging production-like environmnet or use with greatest
   care on a production system. In particular, downtime can occur if you are testing 
