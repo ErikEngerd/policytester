@@ -294,7 +294,7 @@ using the label that was added.
 * UDP tests are, for obvious reasons, not really possible in a generic way. Even though
   policytester supports it, these tests are unreliable
 * the cleanup phase simply deletes instrumented pods. Your setup must be able to handle
-  this. Use this tool on a staging production-like environmnet or use with greatest
+  this. Use this tool on a staging production-like environment or use with greatest
   care on a production system. In particular, downtime can occur if you are testing 
   network access from deployments and replicasets with replica count 1. 
 * tested with kubernetes 1.23. It will not work with earlier versions because of a change 
